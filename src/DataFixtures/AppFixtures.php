@@ -31,8 +31,6 @@ use App\Entity\Recette;
           $manager -> persist($recette);
       }
      }
-
-
   }
 
   
