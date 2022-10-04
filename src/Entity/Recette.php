@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\RecetteRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\DBAL\Types\Types;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -13,14 +15,18 @@ class Recette
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["getAll","get"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
     private ?string $recette_name = null;
 
-    #[ORM\ManyToOne(inversedBy: 'ingredient')]
-    private ?Ingredient $ingredient = null;
+    #[ORM\ManyToMany(targetEntity: Ingredient::class, mappedBy: 'recette')]
+    private Collection $ingredients;
+
+    public function __construct()
+    {
+        $this->ingredients = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -39,15 +45,32 @@ class Recette
         return $this;
     }
 
-    public function getIngredient(): ?Ingredient
+    /**
+     * @return Collection<int, Ingredient>
+     */
+    public function getIngredients(): Collection
     {
-        return $this->ingredient;
+        return $this->ingredients;
     }
 
-    public function setIngredient(?Ingredient $ingredient): self
+    public function addIngredient(Ingredient $ingredient): self
     {
-        $this->ingredient = $ingredient;
+        if (!$this->ingredients->contains($ingredient)) {
+            $this->ingredients->add($ingredient);
+            $ingredient->addRecette($this);
+        }
 
         return $this;
     }
+
+    public function removeIngredient(Ingredient $ingredient): self
+    {
+        if ($this->ingredients->removeElement($ingredient)) {
+            $ingredient->removeRecette($this);
+        }
+
+        return $this;
+    }
+
+
 }
