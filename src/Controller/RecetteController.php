@@ -2,19 +2,22 @@
 
 namespace App\Controller;
 
-use App\Repository\RecetteRepository;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Serializer\Serializer;
-use Symfony\Component\Serializer\SerializerInterface;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use App\Entity\Recette;
 use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\Entity;
+use App\Repository\RecetteRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Serializer\Serializer;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
 class RecetteController extends AbstractController
 {
@@ -85,5 +88,44 @@ class RecetteController extends AbstractController
         $entityManager->remove($recette);
         $entityManager->flush();
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+
+    #[Route('/recette', name: 'recette.create', methods: ['POST'])]
+    public function createRecette(Request $request, EntityManagerInterface $manager,SerializerInterface $serializer, UrlGeneratorInterface $urlgenerator):JsonResponse
+    {
+        $event = $serializer->deserialize(
+            $request -> getContent(),
+            Recette::class,
+            'json'
+        );
+        $recette = New Recette();
+        $recette->setRecetteName("");
+        $manager->persist($recette);
+        $manager->flush();
+
+        $content=$request->toArray();
+
+        $location = $urlgenerator->generate('recette.getOne', ['id'=>$recette->getId()],UrlGeneratorInterface::ABSOLUTE_PATH);
+        return new JsonResponse(null, Response::HTTP_CREATED,["Location"=>$location],true);
+    }
+   
+    #[Route('/recette/{id)', name: 'recette.update', methods: ['PUT'])]
+    public function updateRecette(Recette $recette, Request $request, EntityManagerInterface $manager,SerializerInterface $serializer, UrlGeneratorInterface $urlgenerator):JsonResponse
+    {
+        $updateRecette = $serializer->deserialize(
+            $request -> getContent(),
+            Recette::class,
+            'json',
+            [AbstractNormalizer::OBJECT_TO_POPULATE => $recette]
+        );
+        $recette = New Recette();
+        $recette->setRecetteName("");
+        $manager->persist($recette);
+        $manager->flush();
+
+        $content=$request->toArray();
+        
+        $location = $urlgenerator->generate('recette.getOne', ['id'=>$recette->getId()],UrlGeneratorInterface::ABSOLUTE_PATH);
+        return new JsonResponse(null, Response::HTTP_CREATED,["Location"=>$location],true);
     }
 }
