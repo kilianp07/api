@@ -18,6 +18,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class RecetteController extends AbstractController
 {
@@ -29,7 +30,15 @@ class RecetteController extends AbstractController
         ]);
     }
     
+    /**
+     * This route is used to list all the recettes in the database
+     *
+     * @param RecetteRepository $repository
+     * @param SerializerInterface $serializer
+     * @return JsonResponse
+     */
     #[Route('/recette/getAll', name: 'cours.getAll')]
+    #[Groups(['recette:read'])]
     /**
      * Return all recettes
      *
@@ -58,9 +67,10 @@ class RecetteController extends AbstractController
      */
     
     #[Route('/recette/{id}', name: 'recette.get', methods: ['GET'])]
+    #[Groups(['recette:read'])]
     #[ParamConverter("recette",options:["id"=> "id"])]
     /**
-     * Undocumented function
+     * this function return one recette by id
      *
      * @param Recette $recette
      * @param RecetteRepository $repository
@@ -74,10 +84,19 @@ class RecetteController extends AbstractController
         return New JsonResponse($jsonRecette,Response::HTTP_OK, ['accept'=>'json'],true);
     }
     
+    /**
+     * @Route("/recette", name="recette.create", methods={"POST"})
+     * @param Request $request
+     * @param SerializerInterface $serializer
+     * @param EntityManagerInterface $entityManager
+     * @param ValidatorInterface $validator
+     * @return JsonResponse
+     */
     #[Route('/recette/{id}', name: 'recette.delete', methods: ['DELETE'])]
     #[ParamConverter("recette",options:["id"=> "id"])]
+    #[Groups(['recette:read'])]
     /**
-     * This function delete the recette that is associated to id
+     * this function delete a recette by id 
      *
      * @param [type] $recette
      * @param EntityManagerInterface $entityManager
@@ -90,8 +109,18 @@ class RecetteController extends AbstractController
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 
+    /**
+     * Create a new recette in the database and return it in json format with the location of the new recette in the header of the response
+     *
+     * @param Request $request
+     * @param EntityManagerInterface $manager
+     * @param SerializerInterface $serializer
+     * @param UrlGeneratorInterface $urlgenerator
+     * @param ValidatorInterface $validator
+     * @return JsonResponse
+     */
     #[Route('/recette', name: 'recette.create', methods: ['POST'])]
-    public function createRecette(Request $request, EntityManagerInterface $manager,SerializerInterface $serializer, UrlGeneratorInterface $urlgenerator):JsonResponse
+    public function createRecette(Request $request, EntityManagerInterface $manager,SerializerInterface $serializer, UrlGeneratorInterface $urlgenerator, ValidatorInterface $validator):JsonResponse
     {
         $event = $serializer->deserialize(
             $request -> getContent(),
@@ -100,6 +129,10 @@ class RecetteController extends AbstractController
         );
         $recette = New Recette();
         $recette->setRecetteName("");
+        $errors =$validator->validate($recette);
+        if($errors->count() > 0){
+            return new JsonResponse($serializer->serialize($errors,'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
+        }
         $manager->persist($recette);
         $manager->flush();
 
@@ -110,6 +143,14 @@ class RecetteController extends AbstractController
     }
    
     #[Route('/recette/{id)', name: 'recette.update', methods: ['PUT'])]
+    #[ParamConverter("recette",options:["id"=> "id"])]
+    /**
+     * This function update the recette that is associated to id
+     *
+     * @param [type] $recette
+     * @param EntityManagerInterface $entityManager
+     * @return JsonResponse
+     */
     public function updateRecette(Recette $recette, Request $request, EntityManagerInterface $manager,SerializerInterface $serializer, UrlGeneratorInterface $urlgenerator):JsonResponse
     {
         $updateRecette = $serializer->deserialize(
