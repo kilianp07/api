@@ -7,6 +7,7 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\Entity;
 use App\Repository\RecetteRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -22,7 +23,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class RecetteController extends AbstractController
 {
-    #[Route('/recette', name: 'app_recette')]
+    #[Route('/api/recette', name: 'app_recette')]
     public function index(): Response
     {
         return $this->render('recette/index.html.twig', [
@@ -37,7 +38,7 @@ class RecetteController extends AbstractController
      * @param SerializerInterface $serializer
      * @return JsonResponse
      */
-    #[Route('/recette/getAll', name: 'cours.getAll')]
+    #[Route('/api/recette/getAll', name: 'cours.getAll')]
     #[Groups(['recette:read'])]
     /**
      * Return all recettes
@@ -66,7 +67,7 @@ class RecetteController extends AbstractController
     }
      */
     
-    #[Route('/recette/{id}', name: 'recette.get', methods: ['GET'])]
+    #[Route('api/recette/{id}', name: 'recette.get', methods: ['GET'])]
     #[Groups(['recette:read'])]
     #[ParamConverter("recette",options:["id"=> "id"])]
     /**
@@ -77,6 +78,7 @@ class RecetteController extends AbstractController
      * @param SerializerInterface $serializer
      * @return JsonResponse
      */
+    #[IsGranted("ADMIN",message:"Pas de droit")]
     public function getOne(Recette $recette, RecetteRepository $repository, SerializerInterface $serializer): JsonResponse
     {
         $recette = $repository->find($recette);
@@ -92,7 +94,7 @@ class RecetteController extends AbstractController
      * @param ValidatorInterface $validator
      * @return JsonResponse
      */
-    #[Route('/recette/{id}', name: 'recette.delete', methods: ['DELETE'])]
+    #[Route('/api/recette/{id}', name: 'recette.delete', methods: ['DELETE'])]
     #[ParamConverter("recette",options:["id"=> "id"])]
     #[Groups(['recette:read'])]
     /**
@@ -119,7 +121,8 @@ class RecetteController extends AbstractController
      * @param ValidatorInterface $validator
      * @return JsonResponse
      */
-    #[Route('/recette', name: 'recette.create', methods: ['POST'])]
+    #[Route('/api/recette', name: 'recette.create', methods: ['POST'])]
+    #[IsGranted('ADMIN',message:"Pas de droit")]
     public function createRecette(Request $request, EntityManagerInterface $manager,SerializerInterface $serializer, UrlGeneratorInterface $urlgenerator, ValidatorInterface $validator):JsonResponse
     {
         $event = $serializer->deserialize(
@@ -142,7 +145,7 @@ class RecetteController extends AbstractController
         return new JsonResponse(null, Response::HTTP_CREATED,["Location"=>$location],true);
     }
    
-    #[Route('/recette/{id)', name: 'recette.update', methods: ['PUT'])]
+    #[Route('/api/recette/{id)', name: 'recette.update', methods: ['PUT'])]
     #[ParamConverter("recette",options:["id"=> "id"])]
     /**
      * This function update the recette that is associated to id

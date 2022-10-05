@@ -17,15 +17,6 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class PictureController extends AbstractController
 {
-    #[Route('/', name: 'app_picture')]
-    public function index(): Response
-    {
-        return $this->render('picture/index.html.twig', [
-            'controller_name' => 'PictureController',
-        ]);
-    }
-
-
     #[Route('/api/picture', name: 'picture.create', methods:['POST'])]
     #[ParamConverter("picture",options:["id"=> "idPicture"])]
 
@@ -36,7 +27,7 @@ class PictureController extends AbstractController
         $picture->setFile($file)
         ->setMimeType($file->getClientMimeType())
         ->setRealName($file->getClientOriginalName())
-        ->setPublicPath('/asset/pictures')
+        ->setPublicPath('asset/pictures')
         ->setStatus(true)
         ->setUploadDate(new \DateTime());
 
@@ -52,12 +43,21 @@ class PictureController extends AbstractController
     #[Route('/api/picture/{idPicture}', name: 'picture.get', methods: ['GET'])]
     #[Groups(['Pictures:read'])]
     #[ParamConverter("picture",options:["id"=> "idPicture"])]
-    public function getPicture(Picture $picture, PictureRepository $repository, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator): JsonResponse
+    /**
+     * Function to get one picture by id, return a json response with the picture added in the body of the response
+     *
+     * @param Picture $picture
+     * @param SerializerInterface $serializer
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getPicture(Picture $picture, SerializerInterface $serializer, Request $request): JsonResponse
     {
 
-        $RLlocation = $picture->getPublicPath().DIRECTORY_SEPARATOR.$picture->getRealPath();
-        $location = $urlGenerator->generate('app_picture',[], UrlGeneratorInterface::ABSOLUTE_URL);
+        $RLlocation = $picture->getPublicPath().'/'.$picture->getRealPath();
+        $location = $request ->getUriForPath('/');
         $location = $location.str_replace('','', $RLlocation);
+        $picture->setPublicPath($location);
         return new JsonResponse($serializer->serialize($picture, 'json'), JsonResponse::HTTP_OK, ['Location' => $location], true);
     }
 }
