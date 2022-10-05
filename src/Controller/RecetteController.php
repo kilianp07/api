@@ -78,7 +78,7 @@ class RecetteController extends AbstractController
      * @param SerializerInterface $serializer
      * @return JsonResponse
      */
-    #[IsGranted("ADMIN",message:"Pas de droit")]
+    #[IsGranted('ROLE_ADMIN',message:"Pas de droit")]
     public function getOne(Recette $recette, RecetteRepository $repository, SerializerInterface $serializer): JsonResponse
     {
         $recette = $repository->find($recette);

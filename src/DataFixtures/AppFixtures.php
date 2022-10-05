@@ -44,7 +44,7 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
       $userUser = new User();
       $password = $this->faker->password(2,6);        
       $userUser->setUsername("admin");
-      $userUser->setRoles(['ADMIN']);
+      $userUser->setRoles(['ROLE_ADMIN']);
       $userUser->setPassword($this->userPasswordHasher->hashPassword($userUser,"password"));
       $manager->persist($userUser);
       $manager ->flush();
