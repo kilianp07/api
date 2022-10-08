@@ -31,22 +31,17 @@ class RecetteController extends AbstractController
         ]);
     }
     
-    /**
-     * This route is used to list all the recettes in the database
-     *
-     * @param RecetteRepository $repository
-     * @param SerializerInterface $serializer
-     * @return JsonResponse
-     */
-    #[Route('/api/recette/getAll', name: 'cours.getAll')]
+   
+    #[Route('/api/recette/getAll', name: 'recette.getAll')]
     #[Groups(['recette:read'])]
     /**
-     * Return all recettes
+     * Return all recettes contained in the database
      *
      * @param RecetteRepository $repository
      * @param SerializerInterface $serializer
      * @return JsonResponse
      */
+    #[IsGranted('ROLE_USER', message: 'Vous n\'avez pas les droits pour accéder à cette ressource')]
     public function getAllRecette(RecetteRepository $repository, SerializerInterface $serializer): JsonResponse
     {
         $recette = $repository->findAll();
@@ -78,7 +73,6 @@ class RecetteController extends AbstractController
      * @param SerializerInterface $serializer
      * @return JsonResponse
      */
-    #[IsGranted('ROLE_ADMIN',message:"Pas de droit")]
     public function getOne(Recette $recette, RecetteRepository $repository, SerializerInterface $serializer): JsonResponse
     {
         $recette = $repository->find($recette);
@@ -86,29 +80,36 @@ class RecetteController extends AbstractController
         return New JsonResponse($jsonRecette,Response::HTTP_OK, ['accept'=>'json'],true);
     }
     
-    /**
-     * @Route("/recette", name="recette.create", methods={"POST"})
-     * @param Request $request
-     * @param SerializerInterface $serializer
-     * @param EntityManagerInterface $entityManager
-     * @param ValidatorInterface $validator
-     * @return JsonResponse
-     */
+ 
     #[Route('/api/recette/{id}', name: 'recette.delete', methods: ['DELETE'])]
-    #[ParamConverter("recette",options:["id"=> "id"])]
     #[Groups(['recette:read'])]
     /**
-     * this function delete a recette by id 
+     * This function delete one recette by id 
      *
-     * @param [type] $recette
+     * @param Recette $recette
      * @param EntityManagerInterface $entityManager
+     * @param RecetteRepository $repository
      * @return JsonResponse
      */
-    public function deleteRecette($recette, EntityManagerInterface $entityManager): JsonResponse
+
+    #[IsGranted('ROLE_USER',message:"Vous n'avez pas les droits pour supprimer une recette")]
+    public function deleteRecette(Recette $recette, EntityManagerInterface $entityManager, RecetteRepository $repository): JsonResponse
     {
-        $entityManager->remove($recette);
-        $entityManager->flush();
-        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+        //Find the recette by id
+        $recette = $repository->find($recette);
+
+        //If the recette doesn't exist return a 404 error
+        if ($repository === null) {
+            return new JsonResponse(['message' => 'Recette not found'], Response::HTTP_NOT_FOUND);
+        }
+        // Else delete the recette and return a 204 status code
+        else{
+            //Remove the recette
+            $entityManager->remove($recette);
+            //Save the change in the database
+            $entityManager->flush();
+            return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+        }
     }
 
     /**
@@ -122,25 +123,30 @@ class RecetteController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/api/recette', name: 'recette.create', methods: ['POST'])]
-    #[IsGranted('ADMIN',message:"Pas de droit")]
     public function createRecette(Request $request, EntityManagerInterface $manager,SerializerInterface $serializer, UrlGeneratorInterface $urlgenerator, ValidatorInterface $validator):JsonResponse
     {
-        $event = $serializer->deserialize(
+
+        $recette = New Recette();
+        //get the json data from the request and deserialize it into a recette object
+        $recette = $serializer->deserialize(
             $request -> getContent(),
             Recette::class,
             'json'
         );
-        $recette = New Recette();
-        $recette->setRecetteName("");
+        
+        // validate the recette
         $errors =$validator->validate($recette);
+
+        // if there are errors, return them in json format with a 400 status code (bad request)
         if($errors->count() > 0){
             return new JsonResponse($serializer->serialize($errors,'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
         }
+        // if there are no errors, save the recette in the database
         $manager->persist($recette);
         $manager->flush();
 
+        // return the recette in json format with a 201 status code (created) and the location of the new recette in the header of the response
         $content=$request->toArray();
-
         $location = $urlgenerator->generate('recette.getOne', ['id'=>$recette->getId()],UrlGeneratorInterface::ABSOLUTE_PATH);
         return new JsonResponse(null, Response::HTTP_CREATED,["Location"=>$location],true);
     }
@@ -156,19 +162,19 @@ class RecetteController extends AbstractController
      */
     public function updateRecette(Recette $recette, Request $request, EntityManagerInterface $manager,SerializerInterface $serializer, UrlGeneratorInterface $urlgenerator):JsonResponse
     {
+        //get the json data from the request and deserialize it into a recette object and update the recette
         $updateRecette = $serializer->deserialize(
             $request -> getContent(),
             Recette::class,
             'json',
             [AbstractNormalizer::OBJECT_TO_POPULATE => $recette]
         );
-        $recette = New Recette();
-        $recette->setRecetteName("");
+        // save the recette in the database
         $manager->persist($recette);
         $manager->flush();
-
         $content=$request->toArray();
         
+        // return the recette in json format with a 201 status code (created) and the location of the new recette in the header of the response
         $location = $urlgenerator->generate('recette.getOne', ['id'=>$recette->getId()],UrlGeneratorInterface::ABSOLUTE_PATH);
         return new JsonResponse(null, Response::HTTP_CREATED,["Location"=>$location],true);
     }

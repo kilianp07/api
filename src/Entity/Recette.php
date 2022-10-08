@@ -16,12 +16,15 @@ class Recette
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['recette:read'])]
     #[Assert\NotNull(message:"Une recette doit avoir un nom")]
     private ?int $id = null;
 
+    #[Groups(['recette:read'])]
     #[ORM\Column(length: 255)]
     private ?string $recette_name = null;
 
+    #[Groups(['recette:read'])]
     #[ORM\ManyToMany(targetEntity: Ingredient::class, mappedBy: 'recette')]
     private Collection $ingredients;
 
