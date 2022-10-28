@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Recette;
+use DateTimeImmutable;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -38,6 +39,41 @@ class RecetteRepository extends ServiceEntityRepository
             $this->getEntityManager()->flush();
         }
     }
+
+    public function findWithPagination($page, $limit){
+        $qb = $this->createQueryBuilder('c')
+            ->setMaxResults($limit)
+            ->setFirstResult(($page - 1) * $limit)
+            ->where('c.status = true');
+
+            return $qb->getQuery()->getResult();
+            
+
+    }
+
+    public function findBetweenDates(DateTimeImmutable $startDate, DateTimeImmutable $endDate, int $pages, int $limit)
+    {
+       $startDateTime = $startDate ? $startDate: new \DateTimeImmutable('now');
+
+       $qb = $this->createQueryBuilder("c");
+       $qb->add(
+        'where',
+        $qb->expr()->orX(
+        $qb->expr()->andX(
+            $qb->expr()->gte("c.dataStart", ":startdate"),
+            $qb->expr()->lte("c.dataEnd", ":enddate")
+        ),
+        $qb->expr()->orX(
+            $qb->expr()->gte("c.dataStart", ":startdate"),
+            $qb->expr()->lte("c.dataEnd", ":enddate")
+          )
+        )
+
+        );
+
+        
+    }
+ 
 
 //    /**
 //     * @return Recette[] Returns an array of Recette objects
