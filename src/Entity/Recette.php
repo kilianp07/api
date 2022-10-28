@@ -8,7 +8,11 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Doctrine\DBAL\Types\Types;
-use Symfony\Component\Serializer\Annotation\Groups;
+//use Symfony\Component\Serializer\Annotation\Groups;
+use JMS\Serializer\Annotation\Groups;
+
+
+
 
 #[ORM\Entity(repositoryClass: RecetteRepository::class)]
 class Recette
@@ -17,7 +21,6 @@ class Recette
     #[ORM\GeneratedValue]
     #[ORM\Column]
     #[Groups(['recette:read'])]
-    #[Assert\NotNull(message:"Une recette doit avoir un nom")]
     private ?int $id = null;
 
     #[Groups(['recette:read'])]
@@ -27,6 +30,9 @@ class Recette
     #[Groups(['recette:read'])]
     #[ORM\ManyToMany(targetEntity: Ingredient::class, mappedBy: 'recette')]
     private Collection $ingredients;
+
+    #[ORM\Column]
+    private ?bool $status = null;
 
     public function __construct()
     {
@@ -73,6 +79,18 @@ class Recette
         if ($this->ingredients->removeElement($ingredient)) {
             $ingredient->removeRecette($this);
         }
+
+        return $this;
+    }
+
+    public function isStatus(): ?bool
+    {
+        return $this->status;
+    }
+
+    public function setStatus(bool $status): self
+    {
+        $this->status = $status;
 
         return $this;
     }

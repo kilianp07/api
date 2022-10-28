@@ -49,14 +49,17 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
       $manager->persist($userUser);
       $manager ->flush();
 
+      // Création d'ingredients
       for($i=0;$i<3; $i++){
         $ingredient = new Ingredient();
         $ingredient ->setName($this->faker->firstName());
+        $ingredient -> setQuantity($this->faker->numberBetween(1,10));
         $manager->persist($ingredient);
       }
       for($i=0; $i<10; $i++){
           $recette = new Recette();
           $recette->setRecetteName($this->faker->sentence(3));
+          $recette->setStatus(true);
           $manager -> persist($recette);
       }
       $manager ->flush();

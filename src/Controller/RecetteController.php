@@ -8,18 +8,23 @@ use Doctrine\ORM\Mapping\Entity;
 use App\Repository\RecetteRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
-use Symfony\Component\Serializer\Serializer;
+//use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Serializer\Annotation\Groups;
-use Symfony\Component\Serializer\SerializerInterface;
+//use Symfony\Component\Serializer\SerializerInterface;
+use JMS\Serializer\SerializerInterface;
+use JMS\Serializer\Serializer;
+use JMS\Serializer\SerializationContext;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 class RecetteController extends AbstractController
 {
@@ -42,10 +47,23 @@ class RecetteController extends AbstractController
      * @return JsonResponse
      */
     #[IsGranted('ROLE_USER', message: 'Vous n\'avez pas les droits pour accéder à cette ressource')]
-    public function getAllRecette(RecetteRepository $repository, SerializerInterface $serializer): JsonResponse
+    public function getAllRecette(Request $request, RecetteRepository $repository, SerializerInterface $serializer, TagAwareCacheInterface $cache): JsonResponse
     {
-        $recette = $repository->findAll();
+        $page = $request->get('page', 1);
+        $limit = $request->get('limit', 10);
+        $limit = $limit > 20 ? 20 : $limit;
+        $limit = $limit < 1 ? 1 : $limit;
+
+        $recette = $repository->findWithPagination($page,$limit);
+         
+        //$recette = $repository->findAll();
         $jsonRecette = $serializer->serialize($recette, 'json');
+        $jsonRecette = $cache->get("getAllRecette", function (ItemInterface $item) use ($repository, $serializer) {
+            $item->tag("recetteCache");
+            echo "Mise en cache";
+            $context = SerializationContext::create()->setGroups(['recette:read']);
+            return $serializer->serialize($jsonRecette, 'json', $context);
+        });
         return New JsonResponse($jsonRecette, Response::HTTP_OK, [],true);
     }
 
@@ -76,8 +94,14 @@ class RecetteController extends AbstractController
     public function getOne(Recette $recette, RecetteRepository $repository, SerializerInterface $serializer): JsonResponse
     {
         $recette = $repository->find($recette);
-        $jsonRecette = $serializer->serialize($recette, 'json');
-        return New JsonResponse($jsonRecette,Response::HTTP_OK, ['accept'=>'json'],true);
+       
+        if($recette->status == true ){
+            $jsonRecette = $serializer->serialize($recette, 'json');
+            return New JsonResponse($jsonRecette,Response::HTTP_OK, ['accept'=>'json'],true);
+        }
+        else{
+            return New JsonResponse(null, Response::HTTP_NOT_FOUND) ;
+        }  
     }
     
  
@@ -122,11 +146,12 @@ class RecetteController extends AbstractController
      * @param ValidatorInterface $validator
      * @return JsonResponse
      */
-    #[Route('/api/recette', name: 'recette.create', methods: ['POST'])]
+    #[Route('/api/recette/createRecette', name: 'recette.create', methods: ['POST'])]
     public function createRecette(Request $request, EntityManagerInterface $manager,SerializerInterface $serializer, UrlGeneratorInterface $urlgenerator, ValidatorInterface $validator):JsonResponse
     {
 
         $recette = New Recette();
+
         //get the json data from the request and deserialize it into a recette object
         $recette = $serializer->deserialize(
             $request -> getContent(),
@@ -135,12 +160,14 @@ class RecetteController extends AbstractController
         );
         
         // validate the recette
-        $errors =$validator->validate($recette);
+        $errors = $validator->validate($recette);
 
         // if there are errors, return them in json format with a 400 status code (bad request)
         if($errors->count() > 0){
             return new JsonResponse($serializer->serialize($errors,'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
         }
+
+        $recette->setStatus(true);
         // if there are no errors, save the recette in the database
         $manager->persist($recette);
         $manager->flush();
@@ -169,8 +196,12 @@ class RecetteController extends AbstractController
             'json',
             [AbstractNormalizer::OBJECT_TO_POPULATE => $recette]
         );
+        $content = $request->toArray();
+
+        // Populate the object with fresh data if it exists either get the old data
+        $updateRecette->setRecetteName($updateRecette->getName() ?? $recette->getRecetteName());
         // save the recette in the database
-        $manager->persist($recette);
+        $manager->persist($updateRecette);
         $manager->flush();
         $content=$request->toArray();
         
@@ -178,4 +209,5 @@ class RecetteController extends AbstractController
         $location = $urlgenerator->generate('recette.getOne', ['id'=>$recette->getId()],UrlGeneratorInterface::ABSOLUTE_PATH);
         return new JsonResponse(null, Response::HTTP_CREATED,["Location"=>$location],true);
     }
+
 }

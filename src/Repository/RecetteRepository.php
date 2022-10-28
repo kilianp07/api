@@ -69,9 +69,7 @@ class RecetteRepository extends ServiceEntityRepository
           )
         )
 
-        );
-
-        
+        );      
     }
  
 
