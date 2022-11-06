@@ -104,7 +104,29 @@ class RecetteController extends AbstractController
         }  
     }
     
+
+
+    /**
+     * This function returns a recette by an ingredient name
+     * @param Request $request
+     * @param Recette $recette
+     * @param RecetteRepository $repository
+     * @param SerializerInterface $serializer
+     * @param IngredientRepository $ingredientRepo
+     * @return JsonResponse
+     */
+    #[Route('/api/recette/getByIngredient/{name}', name: 'recette.getByIngredient', methods: ['GET'])]
+    #[Groups(['recette:read'])]
+    public function getByIngredient(Request $request, RecetteRepository $repository, SerializerInterface $serializer): JsonResponse
+    {
+        $name = $request->get('name');
+        $recette = New Recette();
+        $recette = $repository->getRecetteByIngredient($name);
+        $jsonRecette = $serializer->serialize($recette, 'json');
+        return New JsonResponse($jsonRecette,Response::HTTP_OK, [],true);
+    }
  
+
     #[Route('/api/recette/{id}', name: 'recette.delete', methods: ['DELETE'])]
     #[Groups(['recette:read'])]
     /**

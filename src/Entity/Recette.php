@@ -9,7 +9,8 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Doctrine\DBAL\Types\Types;
 //use Symfony\Component\Serializer\Annotation\Groups;
-use JMS\Serializer\Annotation\Groups;
+use JMS\Serializer\Annotation\Groups as Groups;
+use OpenApi\Attributes as OA;
 
 
 

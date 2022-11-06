@@ -71,7 +71,17 @@ class RecetteRepository extends ServiceEntityRepository
 
         );      
     }
- 
+    
+    // This method return a recette with a recette by an ingredient
+    public function getRecetteByIngredient(string $name){
+        $qb = $this->createQueryBuilder('c')
+            ->where('c.status = true')
+            ->innerJoin('c.ingredients', 'i')
+            ->andWhere('i.name = :name')
+            ->setParameter('name', $name);
+
+            return $qb->getQuery()->getResult();
+    }
 
 //    /**
 //     * @return Recette[] Returns an array of Recette objects
