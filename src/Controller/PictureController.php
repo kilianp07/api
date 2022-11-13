@@ -33,7 +33,7 @@ class PictureController extends AbstractController
 
         $manager->persist($picture);
         $manager->flush();
-    
+
         $jsonPicture = $serializer->serialize($picture, 'json');
         $location = $urlGenerator->generate('picture.get',['idPicture' => $picture->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
         return new JsonResponse($jsonPicture, Response::HTTP_CREATED, ['Location' => $location], true);

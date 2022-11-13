@@ -47,7 +47,7 @@ class RecetteRepository extends ServiceEntityRepository
             ->where('c.status = true');
 
             return $qb->getQuery()->getResult();
-            
+
 
     }
 
@@ -68,10 +68,9 @@ class RecetteRepository extends ServiceEntityRepository
             $qb->expr()->lte("c.dataEnd", ":enddate")
           )
         )
-
-        );      
+        );
     }
-    
+
     // This method return a recette with a recette by an ingredient
     public function getRecetteByIngredient(string $name){
         $qb = $this->createQueryBuilder('c')

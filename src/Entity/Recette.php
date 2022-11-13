@@ -35,6 +35,10 @@ class Recette
     #[ORM\Column]
     private ?bool $status = null;
 
+    #[ORM\OneToOne(cascade: ['persist', 'remove'])]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Instruction $instructions = null;
+
     public function __construct()
     {
         $this->ingredients = new ArrayCollection();
@@ -92,6 +96,18 @@ class Recette
     public function setStatus(bool $status): self
     {
         $this->status = $status;
+
+        return $this;
+    }
+
+    public function getInstructions(): ?Instruction
+    {
+        return $this->instructions;
+    }
+
+    public function setInstructions(Instruction $instructions): self
+    {
+        $this->instructions = $instructions;
 
         return $this;
     }
