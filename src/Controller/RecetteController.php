@@ -84,19 +84,19 @@ class RecetteController extends AbstractController
     #[Route('api/recette/{id}', name: 'recette.get', methods: ['GET'])]
     #[Groups(['recette:read'])]
     #[ParamConverter("recette",options:["id"=> "id"])]
-    /**
-     * This function returns a recette by its id
-     *
-     * @param Recette $recette
-     * @param RecetteRepository $repository
-     * @param SerializerInterface $serializer
-     * @return JsonResponse
-     */
+   /**
+    * Return one recette contained in the database by is id
+    *
+    * @param Recette $recette
+    * @param RecetteRepository $repository
+    * @param SerializerInterface $serializer
+    * @return JsonResponse
+    */
     public function getOne(Recette $recette, RecetteRepository $repository, SerializerInterface $serializer): JsonResponse
     {
         $recette = $repository->find($recette);
 
-        if($recette->status == true ){
+        if($recette->isStatus() == true ){
             $jsonRecette = $serializer->serialize($recette, 'json');
             return New JsonResponse($jsonRecette,Response::HTTP_OK, ['accept'=>'json'],true);
         }
@@ -110,14 +110,14 @@ class RecetteController extends AbstractController
 
     #[Route('/api/recette/getByIngredient/{name}', name: 'recette.getByIngredient', methods: ['GET'])]
     #[Groups(['recette:read'])]
-    /**
-     * This function returns one or more recette(s) that contain the ingredient passed in parameter
-     *
-     * @param Request $request
-     * @param RecetteRepository $repository
-     * @param SerializerInterface $serializer
-     * @return JsonResponse
-     */
+   /**
+    * This function return all recette that contain the ingredient name
+    *
+    * @param Request $request
+    * @param RecetteRepository $repository
+    * @param SerializerInterface $serializer
+    * @return JsonResponse
+    */
     public function getByIngredient(Request $request, RecetteRepository $repository, SerializerInterface $serializer): JsonResponse
     {
         $name = $request->get('name');
@@ -135,14 +135,14 @@ class RecetteController extends AbstractController
     #[Route('/api/recette/{id}', name: 'recette.delete', methods: ['DELETE'])]
     #[Groups(['recette:read'])]
     #[IsGranted('ROLE_USER',message:"Vous n'avez pas les droits pour supprimer une recette")]
-    /**
-     * This function delete a recipe by is ID
-     *
-     * @param Recette $recette
-     * @param EntityManagerInterface $entityManager
-     * @param RecetteRepository $repository
-     * @return JsonResponse
-     */
+   /**
+    * This function delete a recette by is id
+    *
+    * @param Recette $recette
+    * @param EntityManagerInterface $entityManager
+    * @param RecetteRepository $repository
+    * @return JsonResponse
+    */
     public function deleteRecette(Recette $recette, EntityManagerInterface $entityManager, RecetteRepository $repository): JsonResponse
     {
         //Find the recette by id
@@ -155,15 +155,17 @@ class RecetteController extends AbstractController
         // Else delete the recette and return a 204 status code
         else{
             //Remove the recette
-            $entityManager->remove($recette);
+            $recette-> setStatus(false);
             //Save the change in the database
             $entityManager->flush();
             return new JsonResponse(null, Response::HTTP_NO_CONTENT);
         }
     }
 
+
+    #[Route('/api/recette/createRecette', name: 'recette.create', methods: ['POST'])]
     /**
-     * Create a new recette in the database and return it in json format with the location of the new recette in the header of the response
+     * This function create a new recette in the database and return the new recette in json format with a 201 status code if the recette is created
      *
      * @param Request $request
      * @param EntityManagerInterface $manager
@@ -172,7 +174,6 @@ class RecetteController extends AbstractController
      * @param ValidatorInterface $validator
      * @return JsonResponse
      */
-    #[Route('/api/recette/createRecette', name: 'recette.create', methods: ['POST'])]
     public function createRecette(Request $request, EntityManagerInterface $manager,SerializerInterface $serializer, UrlGeneratorInterface $urlgenerator, ValidatorInterface $validator):JsonResponse
     {
 

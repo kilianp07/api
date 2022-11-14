@@ -15,7 +15,11 @@ class Instruction
     private ?int $id = null;
 
     #[ORM\Column(type: Types::ARRAY)]
+    #[Groups(['instruction:read', 'recette:read'])]
     private array $instructionList = [];
+
+    #[ORM\Column]
+    private ?bool $status = null;
 
     public function getId(): ?int
     {
@@ -30,6 +34,18 @@ class Instruction
     public function setInstructionList(array $instructionList): self
     {
         $this->instructionList = $instructionList;
+
+        return $this;
+    }
+
+    public function isStatus(): ?bool
+    {
+        return $this->status;
+    }
+
+    public function setStatus(bool $status): self
+    {
+        $this->status = $status;
 
         return $this;
     }

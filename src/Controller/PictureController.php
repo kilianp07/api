@@ -19,7 +19,14 @@ class PictureController extends AbstractController
 {
     #[Route('/api/picture', name: 'picture.create', methods:['POST'])]
     #[ParamConverter("picture",options:["id"=> "idPicture"])]
-
+    /**
+     * Create a picture
+     *
+     * @param Request $request
+     * @param EntityManagerInterface $manager
+     * @param SerializerInterface $serializer
+     * @return JsonResponse
+     */
     public function createPicture(Request $request, EntityManagerInterface $manager, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator): JsonResponse
     {
         $picture = new Picture();
@@ -58,6 +65,40 @@ class PictureController extends AbstractController
         $location = $request ->getUriForPath('/');
         $location = $location.str_replace('','', $RLlocation);
         $picture->setPublicPath($location);
+        if (!$picture || $picture->getStatus() == false) {
+            return new JsonResponse(['message' => 'Picture not found'], Response::HTTP_NOT_FOUND);
+        }
         return new JsonResponse($serializer->serialize($picture, 'json'), JsonResponse::HTTP_OK, ['Location' => $location], true);
+    }
+
+    #[Route('/api/picture/{idPicture}', name: 'picture.delete', methods: ['DELETE'])]
+    #[ParamConverter("picture",options:["id"=> "idPicture"])]
+    /**
+     * Function to delete a picture by id
+     *
+     * @param Picture $picture
+     * @param EntityManagerInterface $manager
+     * @return JsonResponse
+     */
+    public function deletePicture(Picture $picture, EntityManagerInterface $manager): JsonResponse
+    {
+        if (!$picture || $picture->getStatus() == false) {
+            return new JsonResponse(['message' => 'Picture not found'], Response::HTTP_NOT_FOUND);
+        }
+        $picture->setStatus(false);
+        $manager->persist($picture);
+        $manager->flush();
+        return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
+    }
+
+    #[Route('/api/picture', name: 'picture.update', methods: ['PUT'])]
+    /**
+     * This function exists to respect the REST architecture, but it is not used in the project
+     *
+     * @return JsonResponse
+     */
+    public function updatePicture(): JsonResponse
+    {
+        return new JsonResponse(['message' => 'Cannot update a picture'], Response::HTTP_NOT_FOUND);
     }
 }

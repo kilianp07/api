@@ -38,6 +38,7 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
         $userUser->setUsername($this->faker->userName(). '@'.$password);
         $userUser->setPassword($this->userPasswordHasher->hashPassword($userUser, $password));
         $userUser->setRoles(['ROLE_USER']);
+        $userUser->setStatus(true);
         $manager->persist($userUser);
         $manager ->flush();
       }
@@ -47,6 +48,7 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
       $password = $this->faker->password(2,6);
       $userUser->setUsername("admin");
       $userUser->setRoles(['ROLE_ADMIN']);
+      $userUser->setStatus(true);
       $userUser->setPassword($this->userPasswordHasher->hashPassword($userUser,"password"));
       $manager->persist($userUser);
       $manager ->flush();
@@ -87,10 +89,10 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
           // Create a new ingredient
           $ingredient = new Ingredient();
           // Set the name of the ingredient
-          $ingredient->setName($ingredients['name']);
-
+          $ingredient->setName($ingredients);
           // Set the quantity of the ingredient
           $ingredient->setQuantity($this->faker->numberBetween(1,10));
+          $ingredient->setStatus(true);
           // Add the ingredient to the recipe
           $recette->addIngredient($ingredient);
           // Persist the ingredient
@@ -98,10 +100,12 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
         }
         $instruction = New Instruction();
         $instruction->setInstructionList(explode(".", $recipe['instructions']));
+        $instruction->setStatus(true);
         $manager->persist($instruction);
 
         // Link the instruction and ingredient to the recipe
         $recette->setInstructions($instruction);
+        $recette->setStatus(true);
 
         // Persist the recipe
         $manager->persist($recette);

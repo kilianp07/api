@@ -17,13 +17,18 @@ class Ingredient
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['ingredient:read', 'recette:read'])]
     private ?string $name = null;
 
     #[ORM\ManyToMany(targetEntity: Recette::class, inversedBy: 'ingredients')]
     private Collection $recette;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['ingredient:read', 'recette:read'])]
     private ?string $quantity = null;
+
+    #[ORM\Column]
+    private ?bool $status = null;
 
 
     public function __construct()
@@ -80,6 +85,18 @@ class Ingredient
     public function setQuantity(string $quantity): self
     {
         $this->quantity = $quantity;
+
+        return $this;
+    }
+
+    public function isStatus(): ?bool
+    {
+        return $this->status;
+    }
+
+    public function setStatus(bool $status): self
+    {
+        $this->status = $status;
 
         return $this;
     }
